@@ -1,59 +1,51 @@
-# Phase 2 Performance Optimization Plan
+# Phase 2 Performance Optimization Plan (Planned)
 
-**Objective**: Achieve additional 30–50% speedup beyond Phase 1 (expected ~50–60% total improvement from baseline)
+**Status**: 🔄 Planned for future release
 
-**Phase 1 Baseline (with optimizations)**: ~50% improvement  
-**Phase 2 Target**: Additional 30–50% speedup  
-**Combined Outcome**: 65–75% total improvement
+**Target**: Additional 30–50% speedup beyond Phase 1
 
 ---
 
-## 1. Overview: Phase 2 Optimizations
+## Overview
 
-| Optimization | Complexity | Risk | Estimated Gain | Lines of Code |
-|--------------|-----------|------|---------------|----|
-| **2.1 Selective Region Processing** | Medium | Low | 20–30% (when rect << image) | 40–60 |
-| **2.2 Hash/Random Memoization** | Medium | Low | 10–15% | 80–120 |
-| **2.3 Tile-Aware Rendering** | High | Medium | 15–25% | 100–150 |
-| **2.4 Effect Early Bailout** | Medium | Low | 5–10% | 50–80 |
-| **2.5 Lazy Coefficient Computation** | Low | Very Low | 3–5% | 20–40 |
+Five optimization tasks targeting different performance bottlenecks:
 
-**Total Expected Gain**: 30–50%  
-**Implementation Time**: 4–8 hours  
-**Testing Time**: 2–3 hours
+| Task | Complexity | Estimated Gain | Target |
+|------|-----------|---------------|----|
+| Selective Region Processing | Medium | 20–30% | Paint.NET partial tile renders |
+| Hash/Random Memoization | Medium | 10–15% | Reduce repeated hash lookups |
+| Tile-Aware Rendering | High | 15–25% | Cross-tile optimization |
+| Effect Early Bailout | Medium | 5–10% | Skip disabled/zero-intensity effects |
+| Lazy Coefficient Computation | Low | 3–5% | Defer seed-derived calculations |
+
+**Total Expected Gain**: 30–50% improvement  
+**Implementation Effort**: 4–8 hours  
+**Testing Effort**: 2–3 hours
 
 ---
 
-## 2. Optimization 2.1: Selective Region Processing
+## Optimization Details
 
-### 2.1.1 Problem Analysis
+### 2.1 Selective Region Processing
+When Paint.NET requests a small rectangle (partial render), compute only that region instead of the full image. Applicable when rect < 50% of image area.
 
-**Current behavior**:
-```csharp
-// Compute FULL-FRAME effects
-cachedEffectOutput = finalSurface;  // Full src.Width × src.Height
+### 2.2 Hash/Random Memoization  
+Cache frequently-used Hash() outputs to avoid redundant computations at same pixel coordinates.
 
-// Then copy only rect to dst
-for (int y = rect.Top; y < rect.Bottom; y++)
-    for (int x = rect.Left; x < rect.Right; x++)
-        dst[x, y] = cachedEffectOutput[x, y];
-```
+### 2.3 Tile-Aware Rendering
+Optimize rendering when multiple tiles are processed sequentially by exploiting cache locality.
 
-**Issue**: If `rect` is 1/4 the image size (e.g., 512×512 image, rect 256×256), we compute 4× more than needed.
+### 2.4 Effect Early Bailout
+Skip expensive effects (codecs) when intensity or mask value is 0.
 
-### 2.1.2 Solution: Conditional Full-Frame Caching
+### 2.5 Lazy Coefficient Computation
+Defer seed-derived coefficient calculation until actually needed by an effect.
 
-```csharp
-// NEW: Compute only the requested region when significantly smaller
-double rectArea = (rect.Bottom - rect.Top) * (rect.Right - rect.Left);
-double imageArea = rotatedSrc.Width * rotatedSrc.Height;
-double coverageRatio = rectArea / imageArea;
+---
 
-bool isPartialRender = coverageRatio < 0.5;  // Threshold: 50% coverage
+## Next Steps
 
-if (isPartialRender)
-{
-    // Compute only rect region, bypass full-frame caching
+See [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) for Phase 2 task breakdown and priority.
     ApplyEffectsToRegion(rotatedSrc, effectOrder, rect, ...);
     CopyRegionToOutput(effectRegionOutput, dst, rect);
 }

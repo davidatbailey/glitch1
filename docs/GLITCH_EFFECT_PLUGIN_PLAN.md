@@ -1,5 +1,9 @@
 # glitch1 Paint.NET CodeLab Effect Plugin Plan
 
+**Status**: ✅ Milestone 1 Complete | See [README.md](../README.md) and [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) for current implementation status.
+
+---
+
 ## Goal
 
 Create `glitch1`, a Paint.NET CodeLab effect plugin that applies a family of deterministic glitch effects inspired by real or imagined data bugs. The plugin should be useful as both a creative image effect and a coding exemplar: clear structure, predictable output from a seed, and performance-conscious image processing.
